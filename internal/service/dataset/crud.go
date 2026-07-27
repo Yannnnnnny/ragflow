@@ -99,7 +99,7 @@ func (d *DatasetService) CreateDataset(ctx context.Context, req *service.CreateD
 	embdID := tenant.EmbdID
 	tenantEmbdID := ptrStringValue(tenant.TenantEmbdID)
 	if embeddingModel != "" {
-		ok, message := d.verifyEmbeddingAvailability(embeddingModel, tenantID)
+		ok, message := d.verifyEmbeddingAvailability(ctx, embeddingModel, tenantID)
 		if !ok {
 			return nil, common.CodeDataError, errors.New(message)
 		}
@@ -107,7 +107,7 @@ func (d *DatasetService) CreateDataset(ctx context.Context, req *service.CreateD
 		tenantEmbdID = ""
 	}
 	if embdID != "" && tenantEmbdID == "" {
-		resolvedID, err := service.NewModelProviderService().ResolveModelID(tenantID, entity.ModelTypeEmbedding, embdID)
+		resolvedID, err := service.NewModelProviderService().ResolveModelID(ctx, tenantID, entity.ModelTypeEmbedding, embdID)
 		if err == nil {
 			tenantEmbdID = resolvedID
 		} else {
@@ -383,11 +383,20 @@ func (d *DatasetService) ListDatasets(ctx context.Context, id, name string, page
 	}
 
 	data := make([]map[string]interface{}, 0, len(kbs))
+	modelNameCache := make(map[string]string)
 	for _, kb := range kbs {
 		if kb == nil {
 			continue
 		}
-		data = append(data, datasetListItemToMap(kb))
+		item := datasetListItemToMap(kb)
+		// Mirror the memory list: surface the concrete model display name
+		// (modelName@instance@provider) instead of a raw tenant_model ID.
+		tenantEmbdID := ptrStringValue(kb.TenantEmbdID)
+		if tenantEmbdID == "" && isHexID(kb.EmbdID) {
+			tenantEmbdID = kb.EmbdID
+		}
+		item["embedding_model"] = service.ResolveTenantModelDisplayName(tenantEmbdID, kb.EmbdID, modelNameCache)
+		data = append(data, item)
 	}
 
 	return data, total, common.CodeSuccess, nil
