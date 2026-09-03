@@ -4121,8 +4121,8 @@ Creates a session with an agent.
   - `'content-Type: application/json'
   - `'Authorization: Bearer <YOUR_API_KEY>'`
 - Body:
-  - the required parameters:`str`
-  - other parameters:
+  - `"user_id"`: `string` (optional)
+  - Other parameters:
     The variables specified in the **Begin** component.
 
 ##### Request example
@@ -4142,8 +4142,8 @@ curl --request POST \
 
 - `agent_id`: (*Path parameter*)
   The ID of the associated agent.
-- `user_id`: (*Filter parameter*)
-  The optional user-defined ID for parsing docs (especially images) when creating a session while uploading files.
+- `user_id`: (*Body or query parameter*), `string`, *Optional*
+  A user-defined ID associated with the created session. It can be provided either in the JSON request body or as a URL query parameter. If both are provided, the value in the request body takes precedence. If omitted, the tenant ID associated with the current API key is used.
 
 #### Response
 
@@ -4690,14 +4690,14 @@ Failure:
 
 ### List agent sessions
 
-**GET** `/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}&user_id={user_id}&dsl={dsl}`
+**GET** `/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}&user_id={user_id}&keywords={keywords}&from_date={from_date}&to_date={to_date}&dsl={dsl}&exp_user_id={exp_user_id}`
 
 Lists sessions associated with a specified agent.
 
 #### Request
 
 - Method: GET
-- URL: `/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}`
+- URL: `/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}&user_id={user_id}&keywords={keywords}&from_date={from_date}&to_date={to_date}&dsl={dsl}&exp_user_id={exp_user_id}`
 - Headers:
   - `'Authorization: Bearer <YOUR_API_KEY>'`
 
@@ -4705,7 +4705,7 @@ Lists sessions associated with a specified agent.
 
 ```bash
 curl --request GET \
-     --url http://{address}/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}&user_id={user_id} \
+     --url 'http://{address}/api/v1/agents/{agent_id}/sessions?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&id={session_id}&user_id={user_id}&keywords={keywords}&from_date={from_date}&to_date={to_date}&dsl={dsl}&exp_user_id={exp_user_id}' \
      --header 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
@@ -4719,8 +4719,8 @@ curl --request GET \
   The number of sessions on each page. Defaults to `30`.
 - `orderby`: (*Filter parameter*), `string`
   The field by which sessions should be sorted. Available options:
-  - `create_time` (default)
-  - `update_time`
+  - `create_time`
+  - `update_time` (default)
 - `desc`: (*Filter parameter*), `boolean`
   Indicates whether the retrieved sessions should be sorted in descending order. Defaults to `true`.
 - `id`: (*Filter parameter*), `string`
@@ -4729,6 +4729,14 @@ curl --request GET \
   The optional user-defined ID passed in when creating session.
 - `dsl`: (*Filter parameter*), `boolean`
   Indicates whether to include the dsl field of the sessions in the response. Defaults to `true`.
+- `keywords`: (*Filter parameter*), `string`
+  Fuzzy-searches the session ID, session name, and session messages.
+- `from_date`: (*Filter parameter*), `string`
+  Filters sessions whose applicable date is on or after this date.
+- `to_date`: (*Filter parameter*), `string`
+  Filters sessions whose applicable date is on or before this date.
+- `exp_user_id`: (*Filter parameter*), `string`
+  Returns only the IDs and names of sessions associated with the specified external user ID. When provided, the endpoint uses this special listing mode and does not apply the other pagination and filtering parameters.
 
 #### Response
 
@@ -5921,14 +5929,14 @@ Failure
 
 ### List messages of a memory
 
-**GET** `/api/v1/memories/{memory_id}?agent_id={agent_id}&keywords={session_id}&page={page}&page_size={page_size}`
+**GET** `/api/v1/memories/{memory_id}?agent_id={agent_id}&keywords={keywords}&page={page}&page_size={page_size}`
 
 List the messages of a specified memory.
 
 #### Request
 
 - Method: GET
-- URL: `/api/v1/memories/{memory_id}?agent_id={agent_id}&keywords={session_id}&page={page}&page_size={page_size}`
+- URL: `/api/v1/memories/{memory_id}?agent_id={agent_id}&keywords={keywords}&page={page}&page_size={page_size}`
 - Headers:
   - `'Content-Type: application/json'`
   - `'Authorization: Bearer <YOUR_API_KEY>'`
@@ -5950,9 +5958,9 @@ curl --location 'http://{address}/api/v1/memories/6c8983badede11f083f184ba59bc53
 
   Filters messages by the ID of their source agent. Supports multiple values.
 
-- `session_id`: (*Filter parameter*), `string`, *Optional*
+- `keywords`: (*Filter parameter*), `string`, *Optional*
 
-  Filters messages by their session ID. This field supports fuzzy search.
+  Filters messages by session ID. Despite the parameter name, its value is applied to the `session_id` field.
 
 - `page`: (*Filter parameter*), `int`, *Optional*
 
@@ -8006,7 +8014,7 @@ Lists search apps for the current user.
 #### Request
 
 - Method: GET
-- URL: `/api/v1/searches`
+- URL: `/api/v1/searches?keywords={keywords}&page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&owner_ids={owner_ids}`
 - Headers:
   - `'Authorization: Bearer <YOUR_API_KEY>'`
 
@@ -8023,9 +8031,9 @@ curl --request GET \
 - `keywords`: (*Filter parameter*), `string`
   Search keyword to filter search apps by name.
 - `page`: (*Filter parameter*), `integer`
-  Specifies the page number. Defaults to `0` (no pagination).
+  Specifies the page number. Defaults to `1`. Values less than `1` fall back to `1`.
 - `page_size`: (*Filter parameter*), `integer`
-  The number of items per page. Defaults to `0` (no pagination).
+  The number of items per page. Defaults to `30`. Values less than `1` fall back to `30`. The maximum value is `100`.
 - `orderby`: (*Filter parameter*), `string`
   The field to sort by. Defaults to `create_time`.
 - `desc`: (*Filter parameter*), `boolean`
