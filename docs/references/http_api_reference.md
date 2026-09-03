@@ -51,6 +51,7 @@ The following v0.24.0 REST API paths are deprecated. They remain available throu
 | **GET** `/api/v1/file/get/{file_id}`                                              | **GET** `/api/v1/files/{file_id}`                                                   |
 | **POST** `/api/v1/file/mv`                                                        | **POST** `/api/v1/files/move`                                                       |
 | **POST** `/api/v1/file/convert`                                                   | **POST** `/api/v1/files/link-to-datasets`                                           |
+| **POST** `/api/v1/agents_openai/{agent_id}/chat/completions` | **POST** `/api/v1/agents/chat/completions` with `"openai-compatible": true` |
 
 ---
 
@@ -217,6 +218,10 @@ Failure:
 ---
 
 ### Create agent completion
+
+:::caution DEPRECATED
+This endpoint remains available for backward compatibility but may be removed in a future release. New integrations should use `POST /api/v1/agents/chat/completions` with `"openai-compatible": true`.
+:::
 
 **POST** `/api/v1/agents_openai/{agent_id}/chat/completions`
 
@@ -5165,14 +5170,14 @@ Failure:
 
 ### List agents
 
-**GET** `/api/v1/agents?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&name={agent_name}&id={agent_id}`
+**GET** `/api/v1/agents`
 
-Lists agents.
+Lists agents and compilation template groups accessible to the current user.
 
 #### Request
 
 - Method: GET
-- URL: `/api/v1/agents?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&title={agent_name}&id={agent_id}`
+- URL: `/api/v1/agents`
 - Headers:
   - `'Authorization: Bearer <YOUR_API_KEY>'`
 
@@ -5180,7 +5185,7 @@ Lists agents.
 
 ```bash
 curl --request GET \
-     --url http://{address}/api/v1/agents?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&title={agent_name}&id={agent_id} \
+     --url 'http://{address}/api/v1/agents?page=1&page_size=30&orderby=create_time&desc=true&keywords=example' \
      --header 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
@@ -5196,10 +5201,16 @@ curl --request GET \
   - `update_time`
 - `desc`: (*Filter parameter*), `boolean`
   Indicates whether the retrieved agents should be sorted in descending order. Defaults to `true`.
-- `id`: (*Filter parameter*), `string`
-  The ID of the agent to retrieve.
-- `title`: (*Filter parameter*), `string`
-  The name of the agent to retrieve.
+- `keywords`: (*Filter parameter*), `string`
+  Fuzzy-searches agents by title.
+- `canvas_category`: (*Filter parameter*), `string`
+  Filters agents by one or more comma-separated canvas categories.
+- `canvas_type`: (*Filter parameter*), `string`
+  Filters agents by canvas type.
+- `owner_ids`: (*Filter parameter*), `string`
+  Filters agents by comma-separated authorized owner IDs.
+- `tags`: (*Filter parameter*), `string`
+  Filters agents by comma-separated tags.
 
 #### Response
 
@@ -5207,70 +5218,47 @@ Success:
 
 ```json
 {
-    "code": 0,
-    "data": [
-        {
-            "avatar": null,
-            "canvas_type": null,
-            "create_date": "Thu, 05 Dec 2024 19:10:36 GMT",
-            "create_time": 1733397036424,
-            "description": null,
-            "dsl": {
-                "answer": [],
-                "components": {
-                    "begin": {
-                        "downstream": [],
-                        "obj": {
-                            "component_name": "Begin",
-                            "params": {}
-                        },
-                        "upstream": []
-                    }
-                },
-                "graph": {
-                    "edges": [],
-                    "nodes": [
-                        {
-                            "data": {
-                                "label": "Begin",
-                                "name": "begin"
-                            },
-                            "height": 44,
-                            "id": "begin",
-                            "position": {
-                                "x": 50,
-                                "y": 200
-                            },
-                            "sourcePosition": "left",
-                            "targetPosition": "right",
-                            "type": "beginNode",
-                            "width": 200
-                        }
-                    ]
-                },
-                "history": [],
-                "messages": [],
-                "path": [],
-                "reference": []
-            },
-            "id": "8d9ca0e2b2f911ef9ca20242ac120006",
-            "title": "123465",
-            "update_date": "Thu, 05 Dec 2024 19:10:56 GMT",
-            "update_time": 1733397056801,
-            "user_id": "69736c5e723611efb51b0242ac120007"
-        }
-    ]
+  "code": 0,
+  "data": {
+    "canvas": [
+      {
+        "avatar": null,
+        "canvas_category": "agent_canvas",
+        "canvas_type": "",
+        "description": null,
+        "id": "d12e0f02a13c11f19804611a4dfe1a85",
+        "nickname": "test",
+        "permission": "me",
+        "release_time": null,
+        "tags": "",
+        "tenant_avatar": null,
+        "tenant_id": "fc117a7ea10011f1b894bf34cf9cba96",
+        "title": "111",
+        "type": "agent",
+        "update_time": 1787741800476
+      }
+    ],
+    "total": 1
+  },
+  "message": "success"
 }
 ```
 
-Failure:
+##### Response fields
 
-```json
-{
-    "code": 102,
-    "message": "The agent doesn't exist."
-}
-```
+- `data`: `object`
+  The result container.
+- `data.canvas`: `list[object]`
+  A list of agents and, when applicable, compilation template groups.
+- `data.canvas[].type`: `string`
+  The item type:
+  - `agent`: An agent.
+  - `compilation_template_group`: A compilation template group.
+- `data.total`: `integer`
+  The total number of matched items before pagination.
+- `message`: `string`
+  The result message.
+
 
 ---
 
