@@ -13,18 +13,40 @@ A complete reference for RAGFlow's RESTful API. Before proceeding, please ensure
 
 ## ERROR CODES
 
----
+RAGFlow responses may contain both an HTTP status code and a business code in the JSON response body. These codes should be checked separately.
 
-| Code | Message               | Description                |
-|------|-----------------------|----------------------------|
-| 400  | Bad Request           | Invalid request parameters |
-| 401  | Unauthorized          | Unauthorized access        |
-| 403  | Forbidden             | Access denied              |
-| 404  | Not Found             | Resource not found         |
-| 500  | Internal Server Error | Server internal error      |
-| 1001 | Invalid Chunk ID      | Invalid Chunk ID           |
-| 1002 | Chunk Update Failed   | Chunk update failed        |
+### HTTP status codes
 
+| Code | Meaning |
+|------|---------|
+| 200 | The HTTP request was processed successfully. Check the response body `code` for the business result. |
+| 400 | Bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not found |
+| 409 | Conflict |
+| 500 | Internal server error |
+
+### Response body codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 10 | Not effective |
+| 100 | Exception error |
+| 101 | Invalid request argument |
+| 102 | Invalid or missing data |
+| 103 | Operation error |
+| 105 | Connection error |
+| 106 | Operation still running |
+| 108 | Permission error |
+| 109 | Authentication error |
+| 400 | Bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not found |
+| 409 | Conflict |
+| 500 | Server error |
 ---
 
 ## Deprecated API Aliases
@@ -644,7 +666,7 @@ Success:
         "avatar": null,
         "chunk_count": 0,
         "chunk_method": "naive",
-        "create_date": "Mon, 28 Apr 2025 18:40:41 GMT",
+        "create_date": "2025-04-28T18:40:41",
         "create_time": 1745836841611,
         "created_by": "3af81804241d11f0a6a79f24fc270c7f",
         "description": null,
@@ -668,7 +690,7 @@ Success:
         "status": "1",
         "tenant_id": "3af81804241d11f0a6a79f24fc270c7f",
         "token_num": 0,
-        "update_date": "Mon, 28 Apr 2025 18:40:41 GMT",
+        "update_date": "2025-04-28T18:40:41",
         "update_time": 1745836841611,
         "vector_similarity_weight": 0.3,
     },
@@ -1388,7 +1410,7 @@ To retrieve a specific document's settings and metadata, pass its document ID in
 #### Request
 
 - Method: GET
-- URL: `/api/v1/datasets/{dataset_id}/documents?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&keywords={keywords}&id={document_id}&name={document_name}&create_time_from={timestamp}&create_time_to={timestamp}&suffix={file_suffix}&run={run_status}`
+- URL: `/api/v1/datasets/{dataset_id}/documents?page={page}&page_size={page_size}&orderby={orderby}&desc={desc}&keywords={keywords}&id={document_id}&name={document_name}&create_time_from={timestamp}&create_time_to={timestamp}&suffix={file_suffix}&run={run_status}&metadata_condition={json}`
 - Headers:
   - `'content-Type: application/json'`
   - `'Authorization: Bearer <YOUR_API_KEY>'`
@@ -1867,7 +1889,7 @@ Failure:
 
 ### List chunks
 
-**GET** `/api/v1/datasets/{dataset_id}/documents/{document_id}/chunks?keywords={keywords}&page={page}&page_size={page_size}&id={id}`
+**GET** `/api/v1/datasets/{dataset_id}/documents/{document_id}/chunks?keywords={keywords}&page={page}&page_size={page_size}&id={chunk_id}`
 
 Lists chunks in a specified document.
 
@@ -6289,7 +6311,7 @@ curl --location 'http://{address}/api/v1/messages/search?query=%22who%20are%20yo
 
 - `top_n`: (*Filter parameter*), `int`, *Optional*
 
-  The maximum number of most relevant messages to return. This limits the result set size for efficiency. Defaults to `10`.
+  The maximum number of most relevant messages to return. This limits the result set size for efficiency. Defaults to `5`.
 
 #### Response
 
@@ -6509,15 +6531,15 @@ Check the health status of RAGFlow's dependencies (database, Redis, document eng
 ##### Request example
 
 ```bash
-curl --request GET
-     --url http://{address}/api/v1/system/healthz
+curl --request GET \
+     --url http://{address}/api/v1/system/healthz \
      --header 'Content-Type: application/json'
 ```
 
 ##### Request parameters
 
 - `address`: (*Path parameter*), string
-  The host and port of the backend service (e.g., `localhost:7897`).
+  The host and port of the backend service (e.g., `localhost:9380`).
 
 ---
 
